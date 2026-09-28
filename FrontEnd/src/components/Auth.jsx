@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
-export default function Auth() {
+export default function Auth({ onLoginSuccess }) {
   const [isLogin, setIsLogin] = useState(true);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -34,6 +34,7 @@ export default function Auth() {
         // Save token to localStorage
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
+        onLoginSuccess?.(data.token, data.user);
       } else {
         setMessage('Registration successful! Please log in.');
         setIsLogin(true); // Switch to login screen after successful signup
@@ -73,7 +74,7 @@ export default function Auth() {
           required
           style={{ padding: '10px', fontSize: '16px' }}
         />
-        <button type="submit" style={{ padding: '10px', fontSize: '16px', background: '#ff4757', color: 'white', border: 'none', cursor: 'pointer', borderRadius: '4px' }}>
+        <button type="submit" style={{ padding: '10px', fontSize: '16px', background: '#2e8b57', color: 'white', border: 'none', cursor: 'pointer', borderRadius: '4px' }}>
           {isLogin ? 'Login' : 'Register'}
         </button>
       </form>
@@ -82,7 +83,7 @@ export default function Auth() {
         {isNeedAccountText(isLogin)}
         <button 
           onClick={() => setIsLogin(!isLogin)} 
-          style={{ background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline', padding: 0, font: 'inherit' }}
+          style={{ background: 'none', border: 'none', color: '#237a4b', cursor: 'pointer', textDecoration: 'underline', padding: 0, font: 'inherit' }}
         >
           {isLogin ? 'Register here' : 'Login here'}
         </button>
