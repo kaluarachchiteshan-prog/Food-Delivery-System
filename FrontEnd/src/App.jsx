@@ -2,12 +2,18 @@
 
 import { useState } from 'react';
 import Auth from './components/Auth';
+import Dashboard from './components/Dashboard';
 
 function App() {
-  const [token, setToken] = useState(localStorage.getItem('token'));
-  const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || 'null'));
+  const [token, setToken] = useState(() => localStorage.getItem('token'));
+  const [user, setUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('user') || 'null');
+    } catch {
+      return null;
+    }
+  });
 
-  // Function to handle logout
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -36,11 +42,7 @@ function App() {
             setUser(newUser);
           }} />
         ) : (
-          <div>
-            <h2>Welcome back, {user?.name || 'Food Lover'}! 🎉</h2>
-            <p>You are now logged into the Food Delivery System dashboard.</p>
-            {/* You can add your restaurant list, food items, or shopping cart components here later! */}
-          </div>
+          <Dashboard user={user} />
         )}
       </main>
     </div>
