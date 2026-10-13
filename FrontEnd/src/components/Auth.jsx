@@ -1,99 +1,115 @@
 import { useState } from 'react';
 
-export default function Auth({ onLoginSuccess }) {
-  const [isLogin, setIsLogin] = useState(true);
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+
+export default function Auth({ initialMode = 'login', onLoginSuccess, onModeChange }) {
+  const [isLogin, setIsLogin] = useState(initialMode === 'login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const switchMode = () => {
+    setIsLogin((current) => {
+      const next = !current;
+      onModeChange?.(next ? 'login' : 'register');
+      return next;
+    });
     setMessage('');
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setMessage('');
+    setIsSubmitting(true);
 
     const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
     const payload = isLogin ? { email, password } : { name, email, password };
 
     try {
-      // Note: If you use Docker, ensure your backend is accessible. 
-      // During local development, you can use http://localhost:5000 + endpoint
-      const response = await fetch(`http://localhost:5000${endpoint}`, {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || data.error || 'Something went wrong');
+        throw new Error(data.message || data.error || 'Something went wrong. Please try again.');
       }
 
       if (isLogin) {
-        setMessage('Login successful!');
-        // Save token to localStorage
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        if (!data.token || !data.user) {
+          throw new Error('The server returned an incomplete sign-in response.');
+        }
         onLoginSuccess?.(data.token, data.user);
       } else {
-        setMessage('Registration successful! Please log in.');
-        setIsLogin(true); // Switch to login screen after successful signup
+        setMessage('You’re on the list! Sign in to get started.');
+        setIsLogin(true);
+        onModeChange?.('login');
+        setPassword('');
       }
-    } catch (err) {
-      setMessage(`Error: ${err.message}`);
+    } catch (error) {
+      setMessage(error.message || 'We couldn’t connect. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: '400px', margin: '50px auto', padding: '20px', border: '1px solid #ccc', borderRadius: '8px', fontFamily: 'Arial' }}>
-      <h2>{isLogin ? 'Login' : 'Register'}</h2>
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+    <div className="auth-content">
+      <div className="auth-eyebrow">GOOD FOOD STARTS HERE</div>
+      <h2>{isLogin ? 'Welcome back.' : 'Come on in.'}</h2>
+      <p className="auth-subtitle">{isLogin ? 'Your next favorite meal is just a sign-in away.' : 'Create an account and make every craving count.'}</p>
+      <form onSubmit={handleSubmit} className="auth-form">
         {!isLogin && (
-          <input
-            type="text"
-            placeholder="Full Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            style={{ padding: '10px', fontSize: '16px' }}
-          />
+          <label>
+            Your name
+            <input
+              type="text"
+              autoComplete="name"
+              placeholder="Alex Morgan"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              required
+            />
+          </label>
         )}
-        <input
-          type="email"
-          placeholder="Email Address"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={{ padding: '10px', fontSize: '16px' }}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          style={{ padding: '10px', fontSize: '16px' }}
-        />
-        <button type="submit" style={{ padding: '10px', fontSize: '16px', background: '#2e8b57', color: 'white', border: 'none', cursor: 'pointer', borderRadius: '4px' }}>
-          {isLogin ? 'Login' : 'Register'}
+        <label>
+          Email address
+          <input
+            type="email"
+            autoComplete="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            required
+          />
+        </label>
+        <label>
+          Password
+          <input
+            type="password"
+            autoComplete={isLogin ? 'current-password' : 'new-password'}
+            placeholder={isLogin ? 'Your password' : 'Create a password'}
+            minLength={6}
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            required
+          />
+        </label>
+        {message && <p className="auth-message" role="status">{message}</p>}
+        <button className="primary-button auth-submit" type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'One moment...' : isLogin ? 'Sign in to Crave Club' : 'Create my account'}
+          {!isSubmitting && <span>↗</span>}
         </button>
       </form>
-
-      <p style={{ marginTop: '15px', textAlign: 'center' }}>
-        {isNeedAccountText(isLogin)}
-        <button 
-          onClick={() => setIsLogin(!isLogin)} 
-          style={{ background: 'none', border: 'none', color: '#237a4b', cursor: 'pointer', textDecoration: 'underline', padding: 0, font: 'inherit' }}
-        >
-          {isLogin ? 'Register here' : 'Login here'}
-        </button>
+      <p className="auth-switch">
+        {isLogin ? 'New around here? ' : 'Already part of the club? '}
+        <button type="button" onClick={switchMode}>{isLogin ? 'Create an account' : 'Sign in'}</button>
       </p>
-
-      {message && <p style={{ textAlign: 'center', color: message.includes('Error') ? 'red' : 'green' }}>{message}</p>}
+      <p className="auth-footnote">By continuing, you agree to our Terms &amp; Privacy Policy.</p>
     </div>
   );
-}
-
-function isNeedAccountText(isLogin) {
-  return isLogin ? "Don't have an account? " : "Already have an account? ";
 }

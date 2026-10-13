@@ -3,6 +3,8 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+const jwtSecret = process.env.JWT_SECRET || 'food-delivery-secret';
+
 // REGISTER
 router.post('/register', async (req, res) => {
   try {
@@ -40,7 +42,7 @@ router.post('/login', async (req, res) => {
     if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
     // Create a JWT token (secret can be anything for now, use environment variables in production)
-    const token = jwt.sign({ id: user._id }, "your_jwt_secret", { expiresIn: "1d" });
+    const token = jwt.sign({ id: user._id }, jwtSecret, { expiresIn: '1d' });
 
     res.status(200).json({ token, user: { id: user._id, name: user.name, email: user.email } });
   } catch (err) {
